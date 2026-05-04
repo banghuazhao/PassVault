@@ -219,12 +219,24 @@ private struct RotationPlanner: View {
 
   private var weekdaysRow: some View {
     LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 7), spacing: 4) {
-      ForEach(Array(calendar.shortStandaloneWeekdaySymbols.enumerated()), id: \.offset) { _, symbol in
+      ForEach(Array(weekdayColumnLabels.enumerated()), id: \.offset) { _, symbol in
         Text(symbol.uppercased())
           .font(.caption2.bold())
           .foregroundStyle(Color.white.opacity(0.55))
           .frame(maxWidth: .infinity)
       }
+    }
+  }
+
+  /// Column 0 aligns with `Calendar.firstWeekday` (fixes misaligned grids for Monday-first locales — e.g. Aug 2026).
+  private var weekdayColumnLabels: [String] {
+    let syms = calendar.shortWeekdaySymbols
+    guard syms.count >= 7 else {
+      return calendar.shortStandaloneWeekdaySymbols.map { $0.uppercased(with: .current) }
+    }
+    return (0..<7).map { column in
+      let weekdayNum = ((calendar.firstWeekday - 1 + column) % 7) + 1  // weekday 1 = Sunday
+      return syms[weekdayNum - 1]
     }
   }
 

@@ -4,7 +4,9 @@
 //
 
 import SwiftUI
+import UIKit
 import UniformTypeIdentifiers
+import UserNotifications
 
 private struct ExportShareToken: Identifiable {
   let id = UUID()
@@ -19,6 +21,7 @@ struct SettingsPaneView: View {
   @State private var confirmPurge = false
   @State private var importPickerOpen = false
   @State private var sharePayload: ExportShareToken?
+  @State private var notificationAuth: UNAuthorizationStatus = .notDetermined
 
   var body: some View {
     NavigationStack {
@@ -42,6 +45,31 @@ struct SettingsPaneView: View {
               .font(.footnote)
               .foregroundStyle(Color.white.opacity(0.55))
               .padding(.top, 4)
+          }
+
+          settingsGroup(title: String(localized: "Reminders")) {
+            Text(reminderNotificationsSummary)
+              .font(.footnote)
+              .foregroundStyle(Color.white.opacity(0.68))
+              .fixedSize(horizontal: false, vertical: true)
+
+            settingsButton(notificationPrimaryTitle, systemImage: notificationPrimaryIcon) {
+              Task {
+                await runNotificationPrimaryAction()
+                await refreshNotificationStatus()
+              }
+            }
+
+            if notificationAuth == .denied {
+              Text(
+                String(
+                  localized:
+                    "If notifications were turned off in Settings, use the button above to open PassVault’s notification page.",
+                ),
+              )
+              .font(.footnote)
+              .foregroundStyle(Color.white.opacity(0.52))
+            }
           }
 
           settingsGroup(title: String(localized: "Autofill")) {
@@ -77,6 +105,12 @@ struct SettingsPaneView: View {
       .navigationTitle(String(localized: "Settings"))
     }
     .preferredColorScheme(.dark)
+    .task {
+      await refreshNotificationStatus()
+    }
+    .onReceive(NotificationCenter.default.publisher(for: UIApplication.willEnterForegroundNotification)) { _ in
+      Task { await refreshNotificationStatus() }
+    }
     .fileImporter(isPresented: $importPickerOpen, allowedContentTypes: [.json]) { result in
       switch result {
       case let .success(url):
@@ -171,6 +205,74 @@ struct SettingsPaneView: View {
       .padding(.vertical, 10)
     }
     .buttonStyle(.plain)
+  }
+
+  private var reminderNotificationsSummary: String {
+    switch notificationAuth {
+    case .authorized:
+      return String(localized: "Reminder alerts are on. Tap below to re-sync scheduled dates with your vault.")
+    case .denied:
+      return String(
+        localized:
+          "PassVault can’t show rotation reminders until notifications are allowed in System Settings.",
+      )
+    case .ephemeral, .provisional:
+      return String(localized: "Reminder delivery is limited or provisional on this device.")
+    case .notDetermined:
+      return String(
+        localized:
+          "Allow notifications so PassVault can alert you on the device when a password is due for refresh.",
+      )
+    @unknown default:
+      return ""
+    }
+  }
+
+  private var notificationPrimaryTitle: String {
+    switch notificationAuth {
+    case .notDetermined:
+      return String(localized: "Enable reminder notifications")
+    case .denied:
+      return String(localized: "Open notification settings")
+    case .authorized, .ephemeral, .provisional:
+      return String(localized: "Refresh reminder schedule")
+    @unknown default:
+      return String(localized: "Notifications")
+    }
+  }
+
+  private var notificationPrimaryIcon: String {
+    switch notificationAuth {
+    case .denied:
+      return "gearshape"
+    default:
+      return "bell.badge"
+    }
+  }
+
+  @MainActor
+  private func runNotificationPrimaryAction() async {
+    switch notificationAuth {
+    case .notDetermined:
+      let granted = await PasswordReminderScheduler.requestAuthorizationFromSettings()
+      if granted {
+        await home.syncScheduledPasswordReminders()
+      }
+    case .denied:
+      if let url = URL(string: UIApplication.openNotificationSettingsURLString) {
+        await UIApplication.shared.open(url)
+      }
+    case .authorized, .ephemeral, .provisional:
+      await home.syncScheduledPasswordReminders()
+    @unknown default:
+      break
+    }
+  }
+
+  @MainActor
+  private func refreshNotificationStatus() async {
+    let s = await UNUserNotificationCenter.current().notificationSettings()
+    notificationAuth = s.authorizationStatus
   }
 
   private func performExportShare() {

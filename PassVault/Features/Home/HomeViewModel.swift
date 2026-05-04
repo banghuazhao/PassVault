@@ -41,6 +41,11 @@ final class HomeViewModel {
     lastErrorDescription = nil
   }
 
+  /// Aligns pending local notifications with `allVaultRows` (after login, DB sync, etc.).
+  func syncScheduledPasswordReminders() async {
+    await PasswordReminderScheduler.rescheduleAll(rows: allVaultRows)
+  }
+
   var displayedPasswords: [VaultPasswordRow] {
     var rows = fetchedPasswords
     if let filter = selectedCategoryFilter {

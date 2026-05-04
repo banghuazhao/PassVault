@@ -5,10 +5,12 @@
 
 import SQLiteData
 import SwiftUI
+import UserNotifications
 
 @main
 struct PassVaultApp: App {
   init() {
+    UNUserNotificationCenter.current().delegate = PassVaultNotificationCenterDelegate.shared
     do {
       let queue = try AppDatabase.makeDatabaseQueue()
       prepareDependencies {
@@ -23,9 +25,6 @@ struct PassVaultApp: App {
     WindowGroup {
       MainTabView()
         .preferredColorScheme(.dark)
-        .task {
-          await PasswordReminderScheduler.requestAuthorizationIfNeeded()
-        }
     }
   }
 }

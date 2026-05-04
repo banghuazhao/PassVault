@@ -30,5 +30,9 @@ struct MainTabView: View {
     .overlay {
       CopyToastOverlay(host: copyToastHost)
     }
+    .task {
+      await PasswordReminderScheduler.requestAuthorizationIfNeeded()
+      await homeShell.syncScheduledPasswordReminders()
+    }
   }
 }

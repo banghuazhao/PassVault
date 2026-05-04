@@ -13,7 +13,31 @@ nonisolated enum PasswordReminderScheduler {
   @MainActor
   static func requestAuthorizationIfNeeded() async {
     let center = UNUserNotificationCenter.current()
-    _ = try? await center.requestAuthorization(options: [.alert, .sound])
+    let settings = await center.notificationSettings()
+    guard settings.authorizationStatus == .notDetermined else { return }
+    _ = try? await center.requestAuthorization(options: [.alert, .sound, .badge])
+  }
+
+  /// Re-sync pending requests with the vault (e.g. after launch or permission grant).
+  @MainActor
+  static func rescheduleAll(rows: [VaultPasswordRow]) async {
+    for row in rows {
+      await reschedule(row: row)
+    }
+  }
+
+  /// Requests permission when `.notDetermined`; returns whether reminders may be scheduled.
+  @MainActor
+  static func requestAuthorizationFromSettings() async -> Bool {
+    let center = UNUserNotificationCenter.current()
+    let before = await center.notificationSettings().authorizationStatus
+    if before == .notDetermined {
+      guard let granted = try? await center.requestAuthorization(options: [.alert, .sound, .badge]) else {
+        return false
+      }
+      return granted
+    }
+    return before == .authorized || before == .ephemeral || before == .provisional
   }
 
   @MainActor
@@ -30,8 +54,20 @@ nonisolated enum PasswordReminderScheduler {
     }
 
     let content = UNMutableNotificationContent()
-    content.title = "Update “\(row.title)”"
-    content.body = "It is time to rotate this password and keep your vault healthy."
+    let displayTitle = row.title.trimmingCharacters(in: .whitespacesAndNewlines)
+    if displayTitle.isEmpty {
+      content.title = String(localized: "Password rotation due")
+    }
+    else {
+      content.title = String(
+        format: String(localized: "Password update — %@"),
+        displayTitle,
+      )
+    }
+    content.body =
+      String(
+        localized: "Rotate this passphrase on schedule to keep your vault in good standing.",
+      )
     content.sound = .default
 
     let components = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute], from: due)

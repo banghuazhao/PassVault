@@ -129,10 +129,14 @@ final class AnalyzeViewModel {
 
     switch calendarFocus {
     case let .month(year, month):
+      guard
+        let monthStart = calendar.date(from: DateComponents(year: year, month: month, day: 1))
+      else { return [:] }
+
       for row in passwords {
         guard let due = row.reminderNextDue else { continue }
-        let compsDue = calendar.dateComponents([.year, .month], from: due)
-        guard compsDue.year == year, compsDue.month == month else { continue }
+        // Timezone-safe bucket: local calendar month of `due`, not raw component pairs.
+        guard calendar.isDate(due, equalTo: monthStart, toGranularity: .month) else { continue }
         let day = calendar.startOfDay(for: due)
         map[day, default: 0] += 1
       }
