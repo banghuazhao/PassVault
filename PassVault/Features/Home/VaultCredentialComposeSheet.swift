@@ -85,6 +85,7 @@ struct VaultCredentialComposeSheet: View {
                     .font(.caption)
                 }
             }
+            .scrollDismissesKeyboard(.immediately)
             .navigationTitle(modeTitle)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

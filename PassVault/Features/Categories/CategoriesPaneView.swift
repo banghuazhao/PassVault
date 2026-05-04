@@ -20,10 +20,8 @@ struct CategoriesPaneView: View {
     NavigationStack {
       ScrollView {
         LazyVGrid(columns: [GridItem(.adaptive(minimum: 152), spacing: 14)], spacing: 14) {
-          ForEach(categoriesVm.categories) { cat in
-            NavigationLink {
-              CategoryShelfStrip(categoryId: cat.id, categoriesVm: categoriesVm, homeVm: homeVm)
-            } label: {
+          ForEach(categoriesVm.categories, id: \.id) { cat in
+            NavigationLink(value: PassVaultCategoryShelfNavID(categoryId: cat.id)) {
               CategoryTileCard(category: cat, count: categoriesVm.passwordCount(for: cat.id))
             }
             .navigationLinkIndicatorVisibility(.hidden)
@@ -40,7 +38,15 @@ struct CategoriesPaneView: View {
         .padding(18)
       }
       .vaultBackdrop()
+      .navigationDestination(for: PassVaultCategoryShelfNavID.self) { shelf in
+        CategoryShelfStrip(
+          categoryId: shelf.categoryId,
+          categoriesVm: categoriesVm,
+          homeVm: homeVm,
+        )
+      }
       .navigationTitle(String(localized: "Categories"))
+      .navigationBarTitleDisplayMode(.inline)
       .toolbar {
         ToolbarItem(placement: .topBarTrailing) {
           Button {
@@ -236,7 +242,7 @@ struct CategoryShelfStrip: View {
           Section {
             ForEach(payloads, id: \.id) { row in
               HStack(spacing: 0) {
-                NavigationLink(value: row.id) {
+                NavigationLink(value: PassVaultCredentialNavID(credentialId: row.id)) {
                   HStack(spacing: 12) {
                     VaultEntryAvatarView(row: row)
                     VStack(alignment: .leading, spacing: 4) {
@@ -281,10 +287,11 @@ struct CategoryShelfStrip: View {
       }
     }
     .navigationTitle(cohort?.name ?? String(localized: "Folder"))
-    .navigationDestination(for: Int.self) { id in
-      if let row = homeVm.passwordRow(withId: id) {
+    .navigationBarTitleDisplayMode(.inline)
+    .navigationDestination(for: PassVaultCredentialNavID.self) { nav in
+      if let row = homeVm.passwordRow(withId: nav.credentialId) {
         VaultCredentialInspectionView(entry: row, homeModel: homeVm) {
-          if let latest = homeVm.passwordRow(withId: id) {
+          if let latest = homeVm.passwordRow(withId: nav.credentialId) {
             composing = .amend(latest)
           }
         }

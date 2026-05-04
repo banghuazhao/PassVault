@@ -81,7 +81,7 @@ struct HomePaneView: View {
           Section {
             ForEach(model.displayedPasswords, id: \.id) { vault in
               HStack(spacing: 0) {
-                NavigationLink(value: vault.id) {
+                NavigationLink(value: PassVaultCredentialNavID(credentialId: vault.id)) {
                   VaultCredentialBriefRow(entry: vault)
                 }
                 .navigationLinkIndicatorVisibility(.hidden)
@@ -144,10 +144,10 @@ struct HomePaneView: View {
               .textCase(nil)
           }
         }
-        .navigationDestination(for: Int.self) { id in
-          if let row = model.passwordRow(withId: id) {
+        .navigationDestination(for: PassVaultCredentialNavID.self) { nav in
+          if let row = model.passwordRow(withId: nav.credentialId) {
             VaultCredentialInspectionView(entry: row, homeModel: model) {
-              if let latest = model.passwordRow(withId: id) {
+              if let latest = model.passwordRow(withId: nav.credentialId) {
                 composing = .amend(latest)
               }
             }

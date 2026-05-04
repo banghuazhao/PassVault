@@ -32,11 +32,9 @@ extension VaultPasswordRow {
     PassVaultEntryKind(rawValue: entryKindRaw) ?? .login
   }
 
-  /// When the title is all decimal digits, use up to the first two as the list icon (e.g. PIN-style names).
-  var numericTitleIconText: String? {
+  var titleIconText: String? {
     let t = title.trimmingCharacters(in: .whitespacesAndNewlines)
     guard !t.isEmpty else { return nil }
-    guard t.allSatisfy(\.isNumber) else { return nil }
     return String(t.prefix(2))
   }
 }
