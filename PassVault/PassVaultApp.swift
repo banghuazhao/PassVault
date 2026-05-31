@@ -17,7 +17,7 @@ struct PassVaultApp: App {
         $0.defaultDatabase = queue
       }
     } catch {
-      fatalError("PassVault could not bootstrap SQLite: \(error)")
+      fatalError("PassVault could not bootstrap SQLite: \(error.localizedDescription)")
     }
   }
 

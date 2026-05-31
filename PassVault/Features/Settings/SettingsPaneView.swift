@@ -73,18 +73,40 @@ struct SettingsPaneView: View {
           }
 
           settingsGroup(title: String(localized: "Autofill")) {
+            NavigationLink {
+              AutoFillSetupView()
+            } label: {
+              HStack(spacing: 12) {
+                Image(systemName: "key.fill")
+                  .font(.body.weight(.semibold))
+                  .foregroundStyle(Color.white.opacity(0.92))
+                  .frame(width: 28)
+                Text(String(localized: "How to enable AutoFill"))
+                  .foregroundStyle(Color.white.opacity(0.94))
+                Spacer()
+                Image(systemName: "chevron.right")
+                  .font(.caption.weight(.bold))
+                  .foregroundStyle(Color.white.opacity(0.28))
+              }
+              .padding(.vertical, 10)
+            }
+            .buttonStyle(.plain)
+
             Toggle(isOn: $autofillAck) {
-              Label(String(localized: "Show AutoFill note"), systemImage: "text.badge.checkmark")
+              Label(String(localized: "Show AutoFill tip in Settings"), systemImage: "text.badge.checkmark")
             }
             .tint(VaultGeneratorTheme.accent)
-            Text(
-              String(
-                localized:
-                  "True iOS Password AutoFill needs an associated Credential Provider extension in this Xcode project.",
+
+            if autofillAck {
+              Text(
+                String(
+                  localized:
+                    "The AutoFill extension shares the same protected vault on this device. Open the guide above if PassVault does not appear under Password Options.",
+                )
               )
-            )
-            .font(.footnote)
-            .foregroundStyle(Color.white.opacity(0.55))
+              .font(.footnote)
+              .foregroundStyle(Color.white.opacity(0.55))
+            }
           }
 
           settingsGroup(title: String(localized: "Privacy")) {

@@ -10,6 +10,7 @@
 		999F9FD92FA85F7E004D4D99 /* SQLiteData in Frameworks */ = {isa = PBXBuildFile; productRef = 999F9FD82FA85F7E004D4D99 /* SQLiteData */; };
 		999FA0472FA8B1DA004D4D99 /* AuthenticationServices.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 999FA0462FA8B1DA004D4D99 /* AuthenticationServices.framework */; };
 		999FA0522FA8B1DA004D4D99 /* Autofill.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 999FA0442FA8B1DA004D4D99 /* Autofill.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		999FA0582FA8B1DA004D4D99 /* SQLiteData in Frameworks */ = {isa = PBXBuildFile; productRef = 999F9FD82FA85F7E004D4D99 /* SQLiteData */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -81,6 +82,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				999FA0582FA8B1DA004D4D99 /* SQLiteData in Frameworks */,
 				999FA0472FA8B1DA004D4D99 /* AuthenticationServices.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -160,6 +162,7 @@
 			);
 			name = Autofill;
 			packageProductDependencies = (
+				999F9FD82FA85F7E004D4D99 /* SQLiteData */,
 			);
 			productName = Autofill;
 			productReference = 999FA0442FA8B1DA004D4D99 /* Autofill.appex */;
@@ -375,11 +378,13 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = PassVault/PassVault.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = F694X76A5X;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_KeychainAccessGroup = "$(AppIdentifierPrefix)com.appsbay.PassVault";
 				INFOPLIST_KEY_NSUserNotificationsUsageDescription = "PassVault schedules local reminders on this device when passwords are due for rotation. No remote server is used.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -408,11 +413,13 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = PassVault/PassVault.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = F694X76A5X;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_KeychainAccessGroup = "$(AppIdentifierPrefix)com.appsbay.PassVault";
 				INFOPLIST_KEY_NSUserNotificationsUsageDescription = "PassVault schedules local reminders on this device when passwords are due for rotation. No remote server is used.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -445,7 +452,8 @@
 				DEVELOPMENT_TEAM = F694X76A5X;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Autofill/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = Autofill;
+				INFOPLIST_KEY_CFBundleDisplayName = PassVault;
+				INFOPLIST_KEY_KeychainAccessGroup = "$(AppIdentifierPrefix)com.appsbay.PassVault";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -474,7 +482,8 @@
 				DEVELOPMENT_TEAM = F694X76A5X;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Autofill/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = Autofill;
+				INFOPLIST_KEY_CFBundleDisplayName = PassVault;
+				INFOPLIST_KEY_KeychainAccessGroup = "$(AppIdentifierPrefix)com.appsbay.PassVault";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",

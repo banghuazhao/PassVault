@@ -11,10 +11,15 @@ enum AppDatabase {
 
   nonisolated static func makeDatabaseQueue() throws -> DatabaseQueue {
     let fm = FileManager.default
-    let base =
-      try fm.url(for: .applicationSupportDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
-    let dir = base.appending(component: "PassVault", directoryHint: .isDirectory)
+    guard let groupRoot = fm.containerURL(forSecurityApplicationGroupIdentifier: PassVaultAppGroup.identifier)
+    else {
+      throw AppDatabaseError.missingSharedContainer(
+        "Configure the \(PassVaultAppGroup.identifier) App Group on the PassVault target and sign with a provisioning profile that includes it."
+      )
+    }
+    let dir = groupRoot.appending(component: "PassVault", directoryHint: .isDirectory)
     try fm.createDirectory(at: dir, withIntermediateDirectories: true)
+    try migrateLegacyDatabaseIfNeeded(fm: fm, groupDirectory: dir)
     let url = dir.appending(path: "vault.sqlite")
 
     var configuration = Configuration()
@@ -88,5 +93,39 @@ enum AppDatabase {
 
     try migrator.migrate(queue)
     return queue
+  }
+
+  nonisolated private static func migrateLegacyDatabaseIfNeeded(fm: FileManager, groupDirectory: URL) throws {
+    let legacyBase =
+      try fm.url(for: .applicationSupportDirectory, in: .userDomainMask, appropriateFor: nil, create: false)
+    let legacyDir = legacyBase.appending(component: "PassVault", directoryHint: .isDirectory)
+    let newDB = groupDirectory.appending(path: "vault.sqlite")
+    guard fm.fileExists(atPath: newDB.path) == false else { return }
+    let legacyDB = legacyDir.appending(path: "vault.sqlite")
+    guard fm.fileExists(atPath: legacyDB.path) else { return }
+
+    let sidecars = ["vault.sqlite-shm", "vault.sqlite-wal"]
+    try fm.createDirectory(at: groupDirectory, withIntermediateDirectories: true)
+    try fm.moveItem(at: legacyDB, to: newDB)
+    for name in sidecars {
+      let legacyExtra = legacyDir.appending(path: name)
+      guard fm.fileExists(atPath: legacyExtra.path) else { continue }
+      let dest = groupDirectory.appending(path: name)
+      if fm.fileExists(atPath: dest.path) {
+        try fm.removeItem(at: dest)
+      }
+      try fm.moveItem(at: legacyExtra, to: dest)
+    }
+  }
+}
+
+nonisolated enum AppDatabaseError: LocalizedError {
+  case missingSharedContainer(String)
+
+  var errorDescription: String? {
+    switch self {
+    case .missingSharedContainer(let detail):
+      return detail
+    }
   }
 }

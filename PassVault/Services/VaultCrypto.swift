@@ -25,10 +25,28 @@ enum VaultCrypto {
   }
 
   nonisolated private static func loadOrMakeKey() throws -> SymmetricKey {
-    if let saved = Keychain.shared.read(account: Self.account),
-      saved.count == 32
-    {
-      return SymmetricKey(data: saved)
+    let accessGroup = VaultKeychainConfig.accessGroupRawValue
+
+    if let ag = accessGroup {
+      if let saved = Keychain.shared.read(account: Self.account, accessGroup: ag),
+        saved.count == 32
+      {
+        return SymmetricKey(data: saved)
+      }
+      // One-time migrate from legacy app-scoped Keychain storage (predates AutoFill extension).
+      if let legacy = Keychain.shared.readLegacyAppScoped(account: Self.account),
+        legacy.count == 32
+      {
+        try Keychain.shared.store(account: Self.account, data: legacy, accessGroup: ag)
+        Keychain.shared.deleteLegacyAppScoped(account: Self.account)
+        return SymmetricKey(data: legacy)
+      }
+    } else {
+      if let saved = Keychain.shared.read(account: Self.account, accessGroup: nil),
+        saved.count == 32
+      {
+        return SymmetricKey(data: saved)
+      }
     }
 
     var bytes = [UInt8](repeating: 0, count: 32)
@@ -36,8 +54,18 @@ enum VaultCrypto {
     guard status == errSecSuccess else { throw VaultCryptoError.randomFailure }
     let keyData = Data(bytes)
 
-    try Keychain.shared.store(account: Self.account, data: keyData)
+    try Keychain.shared.store(account: Self.account, data: keyData, accessGroup: accessGroup)
     return SymmetricKey(data: keyData)
+  }
+}
+
+private enum VaultKeychainConfig {
+  /// From `INFOPLIST_KEY_KeychainAccessGroup` (typically `$(AppIdentifierPrefix)` + suffix).
+  nonisolated static var accessGroupRawValue: String? {
+    guard let raw = Bundle.main.object(forInfoDictionaryKey: "KeychainAccessGroup") as? String,
+      raw.isEmpty == false
+    else { return nil }
+    return raw
   }
 }
 
@@ -60,42 +88,67 @@ private struct Keychain {
 
   private let service = "com.appsbay.PassVault.keychain.v1"
 
-  nonisolated func read(account: String) -> Data? {
-    let query =
+  nonisolated func readLegacyAppScoped(account: String) -> Data? {
+    read(account: account, accessGroup: nil)
+  }
+
+  nonisolated func read(account: String, accessGroup: String?) -> Data? {
+    var query =
       [
-        kSecClass: kSecClassGenericPassword,
-        kSecAttrService: service as Any,
-        kSecAttrAccount: account as Any,
-        kSecReturnData: true,
-        kSecMatchLimit: kSecMatchLimitOne,
-      ] as CFDictionary
+        String(kSecClass): kSecClassGenericPassword,
+        String(kSecAttrService): service,
+        String(kSecAttrAccount): account,
+        String(kSecReturnData): true as CFBoolean,
+        String(kSecMatchLimit): kSecMatchLimitOne,
+      ] as [String: Any]
+
+    if let accessGroup {
+      query[String(kSecAttrAccessGroup)] = accessGroup
+    }
 
     var output: CFTypeRef?
-    let status = SecItemCopyMatching(query, &output)
+    let status = SecItemCopyMatching(query as CFDictionary, &output)
     guard status == errSecSuccess, let data = output as? Data else { return nil }
     return data
   }
 
-  nonisolated func store(account: String, data: Data) throws {
+  nonisolated func deleteLegacyAppScoped(account: String) {
     let query =
       [
-        kSecClass: kSecClassGenericPassword,
-        kSecAttrService: service as Any,
-        kSecAttrAccount: account as Any,
+        String(kSecClass): kSecClassGenericPassword,
+        String(kSecAttrService): service,
+        String(kSecAttrAccount): account,
       ] as CFDictionary
-
     SecItemDelete(query)
+  }
 
-    let saveQuery =
+  nonisolated func store(account: String, data: Data, accessGroup: String?) throws {
+    var deleteQuery =
       [
-        kSecClass: kSecClassGenericPassword,
-        kSecAttrService: service as Any,
-        kSecAttrAccount: account as Any,
-        kSecValueData: data,
-        kSecAttrAccessible: kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly,
-      ] as CFDictionary
+        String(kSecClass): kSecClassGenericPassword,
+        String(kSecAttrService): service,
+        String(kSecAttrAccount): account,
+      ] as [String: Any]
 
-    let status = SecItemAdd(saveQuery, nil)
+    if let accessGroup {
+      deleteQuery[String(kSecAttrAccessGroup)] = accessGroup
+    }
+
+    SecItemDelete(deleteQuery as CFDictionary)
+
+    var savePayload: [String: Any] = [
+      String(kSecClass): kSecClassGenericPassword,
+      String(kSecAttrService): service,
+      String(kSecAttrAccount): account,
+      String(kSecValueData): data,
+      String(kSecAttrAccessible): kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly,
+    ]
+
+    if let accessGroup {
+      savePayload[String(kSecAttrAccessGroup)] = accessGroup
+    }
+
+    let status = SecItemAdd(savePayload as CFDictionary, nil)
     guard status == errSecSuccess else { throw VaultCryptoError.keychainFailure(status) }
   }
 }
