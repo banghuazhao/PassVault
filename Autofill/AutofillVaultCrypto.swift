@@ -11,9 +11,23 @@ import Security
 nonisolated enum AutofillVaultCrypto {
   nonisolated private static let account = "vault.aes.passvault"
 
+  nonisolated static func seal(_ password: Data) throws -> Data {
+    let sealed = try AES.GCM.seal(password, using: try loadOrMakeKey())
+    guard let combine = sealed.combined else {
+      throw AutofillVaultCryptoError.missingCombined
+    }
+    return combine
+  }
+
   nonisolated static func open(_ blob: Data) throws -> Data {
     let box = try AES.GCM.SealedBox(combined: blob)
     return try AES.GCM.open(box, using: try loadOrMakeKey())
+  }
+
+  nonisolated static func fingerprint(for password: String) -> String {
+    SHA256.hash(data: Data(password.utf8))
+      .map { String(format: "%02x", $0) }
+      .joined()
   }
 
   nonisolated private static func loadOrMakeKey() throws -> SymmetricKey {
@@ -39,6 +53,7 @@ nonisolated enum AutofillVaultCrypto {
 
 nonisolated enum AutofillVaultCryptoError: Error {
   case missingKey
+  case missingCombined
 }
 
 private enum AutofillKeychainConfig {

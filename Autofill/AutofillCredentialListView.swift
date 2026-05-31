@@ -7,24 +7,31 @@ import AuthenticationServices
 import SwiftUI
 
 struct AutofillCredentialListView: View {
-  let rows: [AutofillStoredPasswordRow]
+  @StateObject var viewModel: AutofillCredentialViewModel
   let contextSummary: String
-  let loadError: String?
   let onCancel: () -> Void
   let onPick: (ASPasswordCredential) -> Void
 
   @State private var decodeError: String?
 
+  private var suggestedRows: [AutofillStoredPasswordRow] {
+    viewModel.rows.filter { $0.isLikelyMatch }
+  }
+
+  private var otherRows: [AutofillStoredPasswordRow] {
+    viewModel.rows.filter { !$0.isLikelyMatch }
+  }
+
   var body: some View {
     NavigationStack {
       Group {
-        if let loadError {
+        if let loadError = viewModel.loadError {
           unavailableState(
             title: String(localized: "Vault unavailable"),
             systemImage: "exclamationmark.triangle",
             message: loadError,
           )
-        } else if rows.isEmpty {
+        } else if viewModel.rows.isEmpty {
           ContentUnavailableView {
             Label(String(localized: "No saved passwords"), systemImage: "key.slash")
           } description: {
@@ -36,30 +43,19 @@ struct AutofillCredentialListView: View {
             )
           }
         } else {
-          List(rows) { row in
-            Button {
-              pick(row)
-            } label: {
-              VStack(alignment: .leading, spacing: 4) {
-                HStack(alignment: .firstTextBaseline) {
-                  Text(row.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-                    ? String(localized: "Untitled")
-                    : row.title)
-                  .foregroundStyle(Color.primary)
-                  if row.isLikelyMatch {
-                    Text(String(localized: "Match"))
-                      .font(.caption2.weight(.semibold))
-                      .padding(.horizontal, 6).padding(.vertical, 2)
-                      .foregroundStyle(Color.green.opacity(0.95))
-                      .background(Color.green.opacity(0.22))
-                      .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
-                  }
-                  Spacer(minLength: 0)
+          List {
+            if !suggestedRows.isEmpty {
+              Section(String(localized: "Suggested")) {
+                ForEach(suggestedRows) { row in
+                  rowButton(row)
                 }
-                if row.website.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false {
-                  Text(row.website)
-                    .font(.footnote)
-                    .foregroundStyle(Color.secondary)
+              }
+            }
+
+            if !otherRows.isEmpty {
+              Section(String(localized: "All passwords")) {
+                ForEach(otherRows) { row in
+                  rowButton(row)
                 }
               }
             }
@@ -71,10 +67,22 @@ struct AutofillCredentialListView: View {
         ToolbarItem(placement: .cancellationAction) {
           Button(String(localized: "Cancel"), action: onCancel)
         }
+        ToolbarItem(placement: .primaryAction) {
+          NavigationLink {
+            AutofillCredentialCreateView(
+              initialWebsite: contextSummary,
+              onCreated: {
+                viewModel.load()
+              }
+            )
+          } label: {
+            Image(systemName: "plus")
+          }
+        }
       }
     }
     .safeAreaInset(edge: .bottom) {
-      if contextSummary.isEmpty == false, loadError == nil {
+      if contextSummary.isEmpty == false, viewModel.loadError == nil {
         Text(contextSummary)
           .font(.footnote)
           .foregroundStyle(Color.secondary)
@@ -93,6 +101,36 @@ struct AutofillCredentialListView: View {
       Button(String(localized: "Dismiss"), role: .cancel, action: {})
     } message: {
       Text(decodeError ?? "")
+    }
+  }
+
+  @ViewBuilder
+  private func rowButton(_ row: AutofillStoredPasswordRow) -> some View {
+    Button {
+      pick(row)
+    } label: {
+      VStack(alignment: .leading, spacing: 4) {
+        HStack(alignment: .firstTextBaseline) {
+          Text(row.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            ? String(localized: "Untitled")
+            : row.title)
+          .foregroundStyle(Color.primary)
+          if row.isLikelyMatch {
+            Text(String(localized: "Match"))
+              .font(.caption2.weight(.semibold))
+              .padding(.horizontal, 6).padding(.vertical, 2)
+              .foregroundStyle(Color.green.opacity(0.95))
+              .background(Color.green.opacity(0.22))
+              .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+          }
+          Spacer(minLength: 0)
+        }
+        if row.website.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false {
+          Text(row.website)
+            .font(.footnote)
+            .foregroundStyle(Color.secondary)
+        }
+      }
     }
   }
 

@@ -12,24 +12,11 @@ final class CredentialProviderViewController: ASCredentialProviderViewController
   override func prepareCredentialList(for serviceIdentifiers: [ASCredentialServiceIdentifier]) {
     detachChildViewControllers()
 
-    let hosts = Self.normalizedHosts(from: serviceIdentifiers)
-    let loadResult = Result(catching: { try AutofillDatabase.fetchPasswordRows(forMatchingHosts: hosts) })
-    let rows: [AutofillStoredPasswordRow]
-    let loadError: String?
-    switch loadResult {
-    case .success(let fetched):
-      rows = fetched
-      loadError = nil
-    case .failure(let error):
-      rows = []
-      loadError = error.localizedDescription
-    }
-
     let summary = Self.contextSummary(from: serviceIdentifiers)
+    let viewModel = AutofillCredentialViewModel(serviceIdentifiers: serviceIdentifiers)
     let root = AutofillCredentialListView(
-      rows: rows,
+      viewModel: viewModel,
       contextSummary: summary,
-      loadError: loadError,
       onCancel: { [weak self] in
         guard let context = self?.extensionContext else { return }
         context.cancelRequest(
@@ -66,23 +53,6 @@ final class CredentialProviderViewController: ASCredentialProviderViewController
       child.view.bottomAnchor.constraint(equalTo: view.bottomAnchor),
     ])
     child.didMove(toParent: self)
-  }
-
-  private static func normalizedHosts(from identifiers: [ASCredentialServiceIdentifier]) -> Set<String> {
-    var hosts: Set<String> = []
-    for id in identifiers {
-      switch id.type {
-      case .domain:
-        hosts.insert(id.identifier.lowercased())
-      case .URL:
-        if let url = URL(string: id.identifier), let host = url.host?.lowercased() {
-          hosts.insert(host)
-        }
-      @unknown default:
-        break
-      }
-    }
-    return hosts
   }
 
   private static func contextSummary(from identifiers: [ASCredentialServiceIdentifier]) -> String {

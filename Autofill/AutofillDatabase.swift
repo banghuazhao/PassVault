@@ -128,6 +128,45 @@ enum AutofillDatabase {
       }
     }
   }
+
+  nonisolated static func fetchCategories() throws -> [AutofillCategoryRow] {
+    let queue = try makeDatabaseQueue()
+    return try queue.read { db in
+      try AutofillCategoryRow.fetchAll(db, sql: #"SELECT id, name FROM "categories" ORDER BY sortOrder"#)
+    }
+  }
+
+  nonisolated static func insertPassword(
+    categoryId: Int64,
+    title: String,
+    password: String,
+    website: String
+  ) throws {
+    let queue = try makeDatabaseQueue()
+    let now = Date()
+    let formatter = ISO8601DateFormatter()
+    let dateString = formatter.string(from: now)
+
+    let blob = try AutofillVaultCrypto.seal(Data(password.utf8))
+    let fingerprint = AutofillVaultCrypto.fingerprint(for: password)
+
+    try queue.write { db in
+      try db.execute(
+        sql: """
+          INSERT INTO "vaultPasswords" (
+            "categoryId", "title", "passwordBlob", "reuseFingerprint",
+            "entryKindRaw", "website", "notes", "tapCount",
+            "createdAt", "updatedAt"
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          """,
+        arguments: [
+          categoryId, title, blob, fingerprint,
+          "login", website, "", 0,
+          dateString, dateString,
+        ]
+      )
+    }
+  }
 }
 
 nonisolated enum AutofillDatabaseError: Error {
@@ -155,6 +194,16 @@ nonisolated struct AutofillStoredPasswordRow: FetchableRecord {
     self.passwordBlob = passwordBlob
     self.website = website
     self.isLikelyMatch = isLikelyMatch
+  }
+}
+
+nonisolated struct AutofillCategoryRow: FetchableRecord, Identifiable, Hashable {
+  let id: Int64
+  let name: String
+
+  init(row: GRDB.Row) throws {
+    id = row["id"]
+    name = row["name"]
   }
 }
 
