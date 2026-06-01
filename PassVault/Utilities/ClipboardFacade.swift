@@ -12,6 +12,7 @@ enum ClipboardFacade {
     confirmation: String? = nil,
   ) {
     UIPasteboard.general.string = text
+    Haptics.success()
     guard let toastHost else { return }
     toastHost.show(confirmation ?? String(localized: "Copied"))
   }

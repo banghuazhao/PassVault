@@ -78,6 +78,7 @@ struct CategoriesPaneView: View {
                     name: newName.isEmpty ? String(localized: "Untitled") : newName,
                     iconSFName: newIcon,
                   )
+                  Haptics.success()
                   newName = ""
                   newIcon = "folder.fill"
                   newTray = false
@@ -177,6 +178,7 @@ private struct RenameCategoryOverlay: View {
           Button(String(localized: "Save")) {
             Task {
               await categoriesVm.updateCategory(name: name, iconSFName: icon, for: category)
+              Haptics.success()
               dismiss()
             }
           }

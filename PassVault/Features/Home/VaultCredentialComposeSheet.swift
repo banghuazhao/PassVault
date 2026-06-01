@@ -49,16 +49,24 @@ struct VaultCredentialComposeSheet: View {
 
                 Section(String(localized: "Details")) {
                     TextField(String(localized: "Title"), text: $label)
-                    passwordEntryRow
-                    Button {
-                        generator = true
-                    } label: {
-                        Label(String(localized: "Password generator"), systemImage: "wand.and.stars")
+                    
+                    VStack(alignment: .leading, spacing: 12) {
+                        passwordEntryRow
+                        
+                        Button {
+                            generator = true
+                        } label: {
+                            Label(String(localized: "Password generator"), systemImage: "wand.and.stars")
+                                .font(.subheadline.weight(.medium))
+                        }
+                        .buttonStyle(.borderless)
                     }
+                    .padding(.vertical, 4)
 
                     TextField(String(localized: "Website (optional)"), text: $site)
                         .textInputAutocapitalization(.never)
                         .keyboardType(.URL)
+                        .autocorrectionDisabled()
                 }
 
                 Section(String(localized: "Notes")) {
@@ -276,6 +284,7 @@ struct VaultCredentialComposeSheet: View {
                 reminderMonths: months,
             )
         }
+        Haptics.success()
         dismiss()
         onFinished()
     }

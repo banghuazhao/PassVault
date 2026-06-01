@@ -70,13 +70,18 @@ struct HomePaneView: View {
   }
 
   @ViewBuilder
-  private var credentialList: some View {
-    Group {
-      if model.displayedPasswords.isEmpty {
-        EmptyVaultHint()
-          .frame(maxHeight: .infinity)
-      }
-      else {
+    private var credentialList: some View {
+        Group {
+            if model.displayedPasswords.isEmpty {
+                if model.isSearching {
+                    ContentUnavailableView.search(text: model.searchQuery)
+                        .frame(maxHeight: .infinity)
+                } else {
+                    EmptyVaultHint()
+                        .frame(maxHeight: .infinity)
+                }
+            }
+            else {
         List {
           Section {
             ForEach(model.displayedPasswords, id: \.id) { vault in
@@ -144,6 +149,7 @@ struct HomePaneView: View {
               .textCase(nil)
           }
         }
+        .scrollContentBackground(.hidden)
         .navigationDestination(for: PassVaultCredentialNavID.self) { nav in
           if let row = model.passwordRow(withId: nav.credentialId) {
             VaultCredentialInspectionView(entry: row, homeModel: model) {
@@ -253,22 +259,27 @@ private struct VaultCredentialBriefRow: View {
   let entry: VaultPasswordRow
 
   var body: some View {
-    HStack(spacing: 14) {
+    HStack(spacing: 16) {
       VaultEntryAvatarView(row: entry)
 
-      VStack(alignment: .leading, spacing: 4) {
+      VStack(alignment: .leading, spacing: 2) {
         Text(entry.title.isEmpty ? String(localized: "Untitled credential") : entry.title)
-          .foregroundStyle(Color.white.opacity(0.94))
+          .foregroundStyle(Color.white.opacity(0.95))
           .font(.headline)
 
         Text(subline(for: entry))
-          .foregroundStyle(Color.white.opacity(0.62))
+          .foregroundStyle(Color.white.opacity(0.55))
           .font(.subheadline)
+          .lineLimit(1)
       }
 
-      Spacer(minLength: 12)
+      Spacer(minLength: 8)
+      
+      Image(systemName: "chevron.right")
+        .font(.caption2.weight(.bold))
+        .foregroundStyle(Color.white.opacity(0.2))
     }
-    .padding(.vertical, 6)
+    .padding(.vertical, 8)
   }
 
   private func subline(for entry: VaultPasswordRow) -> String {

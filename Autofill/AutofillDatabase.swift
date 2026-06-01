@@ -140,7 +140,10 @@ enum AutofillDatabase {
     categoryId: Int64,
     title: String,
     password: String,
-    website: String
+    website: String,
+    notes: String,
+    customIconSFName: String?,
+    reminderMonths: Int?
   ) throws {
     let queue = try makeDatabaseQueue()
     let now = Date()
@@ -155,14 +158,14 @@ enum AutofillDatabase {
         sql: """
           INSERT INTO "vaultPasswords" (
             "categoryId", "title", "passwordBlob", "reuseFingerprint",
-            "entryKindRaw", "website", "notes", "tapCount",
-            "createdAt", "updatedAt"
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            "entryKindRaw", "website", "notes", "customIconSFName",
+            "reminderIntervalMonths", "tapCount", "createdAt", "updatedAt"
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           """,
         arguments: [
           categoryId, title, blob, fingerprint,
-          "login", website, "", 0,
-          dateString, dateString,
+          "login", website, notes, customIconSFName,
+          reminderMonths, 0, dateString, dateString,
         ]
       )
     }

@@ -40,6 +40,7 @@ struct PasswordGeneratorSheet: View {
   @Environment(\.dismiss) private var dismiss
   @Environment(\.copyToastHost) private var copyToastHost
 
+  @State private var localPassword: String = ""
   @State private var mode: GenMode = .characters
   @State private var length = 30
   @State private var wordCount = 6
@@ -51,7 +52,7 @@ struct PasswordGeneratorSheet: View {
   @State private var showHistory = false
 
   private var strength: PasswordStrengthLevel {
-    PasswordStrengthEvaluator.evaluate(password: password)
+    PasswordStrengthEvaluator.evaluate(password: localPassword)
   }
 
   var body: some View {
@@ -125,7 +126,8 @@ struct PasswordGeneratorSheet: View {
     .background(Color.black.ignoresSafeArea(edges: .top))
     .onAppear {
       historyItems = PasswordGeneratorHistory.load()
-      if password.isEmpty {
+      localPassword = password
+      if localPassword.isEmpty {
         rollPassword()
       }
     }
@@ -161,7 +163,7 @@ struct PasswordGeneratorSheet: View {
         List {
           ForEach(historyItems, id: \.self) { item in
             Button {
-              password = item
+              localPassword = item
               showHistory = false
             } label: {
               Text(item)
@@ -222,7 +224,7 @@ struct PasswordGeneratorSheet: View {
   }
 
   private var passwordDigitAttributed: AttributedString {
-    let s = password.isEmpty ? " " : password
+    let s = localPassword.isEmpty ? " " : localPassword
     let mas = NSMutableAttributedString(string: s)
     let len = (s as NSString).length
     let baseSize: CGFloat = UIFont.preferredFont(forTextStyle: .title3).pointSize
@@ -258,7 +260,7 @@ struct PasswordGeneratorSheet: View {
       generatorAction(
         title: String(localized: "Copy"),
         systemImage: "doc.on.doc",
-        action: { ClipboardFacade.copy(password, toastHost: copyToastHost) },
+        action: { ClipboardFacade.copy(localPassword, toastHost: copyToastHost) },
       )
       generatorAction(
         title: String(localized: "Generate"),
@@ -269,7 +271,8 @@ struct PasswordGeneratorSheet: View {
         title: String(localized: "Save"),
         systemImage: "plus.square.fill",
         action: {
-          PasswordGeneratorHistory.append(password)
+          PasswordGeneratorHistory.append(localPassword)
+          password = localPassword
           dismiss()
         },
       )
@@ -316,7 +319,7 @@ struct PasswordGeneratorSheet: View {
           includeDigits: useDigits,
           includeSymbols: useSymbols,
         )
-        password = next
+        localPassword = next
       case .words:
         var next = try SecurePasswordGenerator.generatePassphrase(wordCount: wordCount)
         if titleCaseWords {
@@ -326,10 +329,10 @@ struct PasswordGeneratorSheet: View {
             .map { $0.capitalized }
             .joined(separator: " ")
         }
-        password = next
+        localPassword = next
       }
       if recordHistory {
-        PasswordGeneratorHistory.append(password)
+        PasswordGeneratorHistory.append(localPassword)
         historyItems = PasswordGeneratorHistory.load()
       }
     } catch {

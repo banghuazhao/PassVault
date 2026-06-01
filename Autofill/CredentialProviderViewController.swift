@@ -31,6 +31,7 @@ final class CredentialProviderViewController: ASCredentialProviderViewController
     )
 
     let hostController = UIHostingController(rootView: root)
+    hostController.overrideUserInterfaceStyle = .dark
     embedFullScreen(hostController)
   }
 

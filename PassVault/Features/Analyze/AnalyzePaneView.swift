@@ -16,28 +16,40 @@ struct AnalyzePaneView: View {
 
   var body: some View {
     NavigationStack {
-      ScrollView {
-        LazyVStack(alignment: .leading, spacing: 22) {
-          SectionCap(String(localized: "Overview"))
-          overviewGrid.vaultCard()
+      Group {
+        if analyze.passwords.isEmpty {
+          ContentUnavailableView {
+            Label(String(localized: "Insights unavailable"), systemImage: "chart.bar.xaxis")
+              .foregroundStyle(.white)
+          } description: {
+            Text(String(localized: "Create your first credential to start analyzing your vault's security and usage."))
+              .foregroundStyle(.white.opacity(0.6))
+          }
+        } else {
+          ScrollView {
+            LazyVStack(alignment: .leading, spacing: 22) {
+              SectionCap(String(localized: "Overview"))
+              overviewGrid.vaultCard()
 
-          SectionCap(String(localized: "Strength distribution"))
-          strengthChart.vaultCard()
+              SectionCap(String(localized: "Strength distribution"))
+              strengthChart.vaultCard()
 
-          SectionCap(String(localized: "Tap cadence (~12 weeks)"))
-          tapsChart.vaultCard()
+              SectionCap(String(localized: "Tap cadence (~12 weeks)"))
+              tapsChart.vaultCard()
 
-          SectionCap(String(localized: "Reminder calendar"))
-          RotationPlanner(analyze: analyze).vaultCard()
+              SectionCap(String(localized: "Reminder calendar"))
+              RotationPlanner(analyze: analyze).vaultCard()
 
-          SectionCap(String(localized: "Fingerprint duplication"))
-          reuseCard.vaultCard()
+              SectionCap(String(localized: "Fingerprint duplication"))
+              reuseCard.vaultCard()
 
-          SectionCap(String(localized: "Insights"))
-          coachCard.vaultCard()
+              SectionCap(String(localized: "Insights"))
+              coachCard.vaultCard()
+            }
+            .padding(.horizontal, 20)
+            .padding(.bottom, 32)
+          }
         }
-        .padding(.horizontal, 20)
-        .padding(.bottom, 32)
       }
       .vaultBackdrop()
       .navigationTitle(String(localized: "Analyze"))

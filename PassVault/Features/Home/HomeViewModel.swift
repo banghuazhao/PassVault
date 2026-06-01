@@ -46,6 +46,10 @@ final class HomeViewModel {
     await PasswordReminderScheduler.rescheduleAll(rows: allVaultRows)
   }
 
+  var isSearching: Bool {
+    !searchQuery.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+  }
+
   var displayedPasswords: [VaultPasswordRow] {
     var rows = fetchedPasswords
     if let filter = selectedCategoryFilter {

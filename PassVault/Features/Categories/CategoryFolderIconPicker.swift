@@ -50,21 +50,23 @@ struct CategoryFolderIconPicker: View {
       ForEach(Self.symbols, id: \.self) { name in
         Button {
           selectedSymbol = name
+          Haptics.selection()
         } label: {
           Image(systemName: name)
-            .font(.title2)
-            .foregroundStyle(Color.primary)
+            .symbolRenderingMode(.hierarchical)
+            .font(.title2.weight(.medium))
+            .foregroundStyle(selectedSymbol == name ? Color.accentColor : Color.primary)
             .frame(maxWidth: .infinity)
-            .padding(12)
+            .frame(height: 52)
             .background(
-              RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(selectedSymbol == name ? Color.accentColor.opacity(0.28) : Color(uiColor: .tertiarySystemFill)),
+              RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(selectedSymbol == name ? Color.accentColor.opacity(0.12) : Color.white.opacity(0.05)),
             )
             .overlay(
-              RoundedRectangle(cornerRadius: 12, style: .continuous)
+              RoundedRectangle(cornerRadius: 14, style: .continuous)
                 .strokeBorder(
-                  selectedSymbol == name ? Color.accentColor.opacity(0.9) : Color.clear,
-                  lineWidth: 2,
+                  selectedSymbol == name ? Color.accentColor.opacity(0.4) : Color.white.opacity(0.05),
+                  lineWidth: 1,
                 ),
             )
         }
