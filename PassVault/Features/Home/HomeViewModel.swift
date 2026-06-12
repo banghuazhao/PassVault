@@ -246,10 +246,16 @@ final class HomeViewModel {
           targetCategoryId = firstCategory.id
       }
 
+      // Smart Merge: Check if title already exists
+      var finalTitle = record.title
+      if fetchedPasswords.contains(where: { $0.title.lowercased() == record.title.lowercased() }) {
+          finalTitle = "\(record.title) (\(String(localized: "Imported")))"
+      }
+
       _ =
         await insertPassword(
           categoryId: targetCategoryId,
-          title: record.title,
+          title: finalTitle,
           password: record.password,
           entryKindRaw: "login",
           website: record.website,
@@ -289,5 +295,9 @@ final class HomeViewModel {
 
   func exportArchive() throws -> Data {
     try PassVaultImportExportService.exportJSON(entries: decryptAllForExport())
+  }
+
+  func exportCSVArchive() throws -> Data {
+    try PassVaultImportExportService.exportCSV(entries: decryptAllForExport())
   }
 }

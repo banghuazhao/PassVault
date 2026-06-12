@@ -27,9 +27,12 @@ struct SettingsPaneView: View {
         LazyVStack(alignment: .leading, spacing: 18) {
           settingsGroup(title: String(localized: "Data")) {
             settingsButton(String(localized: "Export vault as JSON"), systemImage: "square.and.arrow.up") {
-              performExportShare()
+              performExportShare(format: .json)
             }
-            settingsButton(String(localized: "Import vault from JSON"), systemImage: "square.and.arrow.down") {
+            settingsButton(String(localized: "Export vault as CSV"), systemImage: "tablecells") {
+              performExportShare(format: .csv)
+            }
+            settingsButton(String(localized: "Import from JSON or CSV"), systemImage: "square.and.arrow.down") {
               importPickerOpen = true
             }
             settingsButton(
@@ -39,10 +42,18 @@ struct SettingsPaneView: View {
             ) {
               confirmPurge = true
             }
-            Text(String(localized: "Exported JSON contains plaintext passwords. Store exports only somewhere you trust."))
-              .font(.footnote)
-              .foregroundStyle(Color.white.opacity(0.55))
-              .padding(.top, 4)
+            
+            VStack(alignment: .leading, spacing: 8) {
+              Text(String(localized: "Exported JSON contains plaintext passwords. Store exports only somewhere you trust."))
+              
+              Text(String(localized: "Supported import formats: Bitwarden (JSON), Google Chrome (CSV), Safari (CSV), and Generic (CSV)."))
+                .foregroundStyle(VaultGeneratorTheme.accent.opacity(0.8))
+              
+              Text(String(localized: "Duplicate titles: If an imported item has the same title as an existing one, it will be added with an \"(Imported)\" suffix to ensure no data is lost."))
+                .foregroundStyle(Color.white.opacity(0.45))
+            }
+            .font(.footnote)
+            .padding(.top, 8)
           }
 
           settingsGroup(title: String(localized: "Reminders")) {
@@ -143,7 +154,7 @@ struct SettingsPaneView: View {
     .onReceive(NotificationCenter.default.publisher(for: UIApplication.willEnterForegroundNotification)) { _ in
       Task { await refreshNotificationStatus() }
     }
-    .fileImporter(isPresented: $importPickerOpen, allowedContentTypes: [.json]) { result in
+    .fileImporter(isPresented: $importPickerOpen, allowedContentTypes: [.json, .commaSeparatedText]) { result in
       switch result {
       case let .success(url):
         Task {
@@ -155,7 +166,12 @@ struct SettingsPaneView: View {
           }
           guard let raw = try? Data(contentsOf: url) else { return }
           do {
-            let records = try PassVaultImportExportService.decodeImport(data: raw)
+            let records: [ImportedRecord]
+            if url.pathExtension.lowercased() == "csv" {
+                records = PassVaultImportExportService.decodeCSV(data: raw)
+            } else {
+                records = try PassVaultImportExportService.decodeImport(data: raw)
+            }
             await home.importRecords(records: records)
           } catch {
             home.lastErrorDescription = error.localizedDescription
@@ -268,11 +284,25 @@ struct SettingsPaneView: View {
     }
   }
 
-  private func performExportShare() {
+  private enum ExportFormat {
+    case json, csv
+  }
+
+  private func performExportShare(format: ExportFormat) {
     do {
-      let data = try home.exportArchive()
-      let url =
-        FileManager.default.temporaryDirectory.appendingPathComponent("PassVault-export.json")
+      let data: Data
+      let filename: String
+      
+      switch format {
+      case .json:
+        data = try home.exportArchive()
+        filename = "PassVault-export.json"
+      case .csv:
+        data = try home.exportCSVArchive()
+        filename = "PassVault-export.csv"
+      }
+      
+      let url = FileManager.default.temporaryDirectory.appendingPathComponent(filename)
       try data.write(to: url)
       sharePayload = ExportShareToken(url: url)
     } catch {

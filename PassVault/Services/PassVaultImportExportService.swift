@@ -41,14 +41,14 @@ nonisolated struct BitwardenURI: Codable, Sendable {
 
 nonisolated enum PassVaultImportExportService {
 
+  // MARK: - JSON (Bitwarden Compatible)
+
   nonisolated static func exportJSON(
     entries: [(row: VaultPasswordRow, categoryName: String, password: String)]
   ) throws -> Data {
-    // Create folders map
     let categoryNames = Set(entries.map { $0.categoryName })
     let folders: [BitwardenFolder] = categoryNames.map { BitwardenFolder(id: UUID(), name: $0) }
     
-    // Explicitly map to non-optional UUIDs for the lookup table
     var folderIdLookup: [String: UUID] = [:]
     for folder in folders {
         if let id = folder.id {
@@ -97,6 +97,109 @@ nonisolated enum PassVaultImportExportService {
         categoryName: item.folderId.flatMap { folderMap[$0] }
       )
     }
+  }
+
+  // MARK: - CSV (Chrome/Safari/Industry Standard)
+
+  nonisolated static func exportCSV(
+    entries: [(row: VaultPasswordRow, categoryName: String, password: String)]
+  ) -> Data {
+    var csv = "title,url,username,password,folder,notes\n"
+    for pair in entries {
+        let title = escapeCSV(pair.row.title)
+        let url = escapeCSV(pair.row.website)
+        let username = escapeCSV(pair.row.title) // PassVault uses Title as primary label
+        let password = escapeCSV(pair.password)
+        let folder = escapeCSV(pair.categoryName)
+        let notes = escapeCSV(pair.row.notes)
+        
+        csv += "\(title),\(url),\(username),\(password),\(folder),\(notes)\n"
+    }
+    return Data(csv.utf8)
+  }
+
+  nonisolated static func decodeCSV(data: Data) -> [ImportedRecord] {
+    guard let content = String(data: data, encoding: .utf8) else { return [] }
+    let lines = content.components(separatedBy: .newlines).filter { !$0.trimmingCharacters(in: .whitespaces).isEmpty }
+    guard lines.count > 1 else { return [] }
+    
+    let headerRow = parseCSVLine(lines[0])
+    let headerMap = mapHeaders(headerRow)
+    
+    return lines.dropFirst().compactMap { line in
+        let columns = parseCSVLine(line)
+        guard columns.count > 0 else { return nil }
+        
+        func col(_ keys: [String]) -> String {
+            for key in keys {
+                if let idx = headerMap[key], idx < columns.count {
+                    return columns[idx]
+                }
+            }
+            return ""
+        }
+        
+        let title = col(["title", "name"])
+        let url = col(["url", "website", "uri", "login_uri"])
+        let password = col(["password", "login_password"])
+        let notes = col(["notes", "note", "extra"])
+        let folder = col(["folder", "grouping", "category"])
+        
+        if title.isEmpty && url.isEmpty && password.isEmpty { return nil }
+        
+        return ImportedRecord(
+            title: title.isEmpty ? url : title,
+            password: password,
+            website: url,
+            notes: notes,
+            categoryName: folder.isEmpty ? nil : folder
+        )
+    }
+  }
+
+  private static func mapHeaders(_ headers: [String]) -> [String: Int] {
+    var map: [String: Int] = [:]
+    for (idx, header) in headers.enumerated() {
+        map[header.lowercased().trimmingCharacters(in: .whitespaces)] = idx
+    }
+    return map
+  }
+
+  private static func parseCSVLine(_ line: String) -> [String] {
+    var columns: [String] = []
+    var current = ""
+    var inQuotes = false
+    
+    let chars = Array(line)
+    var i = 0
+    while i < chars.count {
+        let char = chars[i]
+        if char == "\"" {
+            if inQuotes && i + 1 < chars.count && chars[i+1] == "\"" {
+                // Escaped quote
+                current.append("\"")
+                i += 1
+            } else {
+                inQuotes.toggle()
+            }
+        } else if char == "," && !inQuotes {
+            columns.append(current.trimmingCharacters(in: .whitespaces))
+            current = ""
+        } else {
+            current.append(char)
+        }
+        i += 1
+    }
+    columns.append(current.trimmingCharacters(in: .whitespaces))
+    return columns
+  }
+
+  private static func escapeCSV(_ text: String) -> String {
+    if text.contains(",") || text.contains("\"") || text.contains("\n") {
+        let escaped = text.replacingOccurrences(of: "\"", with: "\"\"")
+        return "\"\(escaped)\""
+    }
+    return text
   }
 }
 
