@@ -272,9 +272,14 @@ struct CategoryShelfStrip: View {
                     VaultEntryAvatarView(row: row)
                     VStack(alignment: .leading, spacing: 4) {
                       Text(row.title.isEmpty ? String(localized: "Untitled credential") : row.title)
-                      Text(rowSubtitle(row))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                      
+                      let site = row.website.trimmingCharacters(in: .whitespacesAndNewlines)
+                      if !site.isEmpty {
+                        Text(site)
+                          .font(.caption)
+                          .foregroundStyle(.secondary)
+                          .lineLimit(1)
+                      }
                     }
                     Spacer(minLength: 8)
                   }
@@ -402,11 +407,5 @@ struct CategoryShelfStrip: View {
         }
       }
     }
-  }
-
-  private func rowSubtitle(_ row: VaultPasswordRow) -> String {
-    let site = row.website.trimmingCharacters(in: .whitespacesAndNewlines)
-    if !site.isEmpty { return site }
-    return String(localized: "Tap to add a website")
   }
 }
