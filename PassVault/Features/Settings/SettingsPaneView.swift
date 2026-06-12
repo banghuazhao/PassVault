@@ -16,8 +16,6 @@ private struct ExportShareToken: Identifiable {
 struct SettingsPaneView: View {
   @Bindable var home: HomeViewModel
 
-  @AppStorage("passvault.autofill.guidanceSeen") private var autofillAck = false
-
   @State private var confirmPurge = false
   @State private var importPickerOpen = false
   @State private var sharePayload: ExportShareToken?
@@ -53,14 +51,23 @@ struct SettingsPaneView: View {
               .foregroundStyle(Color.white.opacity(0.68))
               .fixedSize(horizontal: false, vertical: true)
 
-            settingsButton(notificationPrimaryTitle, systemImage: notificationPrimaryIcon) {
-              Task {
-                await runNotificationPrimaryAction()
-                await refreshNotificationStatus()
+            if notificationAuth == .notDetermined {
+              settingsButton(String(localized: "Enable reminder notifications"), systemImage: "bell.badge") {
+                Task {
+                  let granted = await PasswordReminderScheduler.requestAuthorizationFromSettings()
+                  if granted {
+                    await home.syncScheduledPasswordReminders()
+                  }
+                  await refreshNotificationStatus()
+                }
               }
-            }
-
-            if notificationAuth == .denied {
+            } else if notificationAuth == .denied {
+              settingsButton(String(localized: "Open notification settings"), systemImage: "gearshape") {
+                if let url = URL(string: UIApplication.openNotificationSettingsURLString) {
+                  UIApplication.shared.open(url)
+                }
+              }
+              
               Text(
                 String(
                   localized:
@@ -69,43 +76,46 @@ struct SettingsPaneView: View {
               )
               .font(.footnote)
               .foregroundStyle(Color.white.opacity(0.52))
+              .padding(.top, 8)
+            } else {
+                Text(String(localized: "Reminders are automatically synced with your vault."))
+                    .font(.footnote)
+                    .foregroundStyle(Color.white.opacity(0.45))
+                    .padding(.top, 4)
             }
           }
 
           settingsGroup(title: String(localized: "Autofill")) {
-            NavigationLink {
-              AutoFillSetupView()
-            } label: {
-              HStack(spacing: 12) {
-                Image(systemName: "key.fill")
-                  .font(.body.weight(.semibold))
-                  .foregroundStyle(Color.white.opacity(0.92))
-                  .frame(width: 28)
-                Text(String(localized: "How to enable AutoFill"))
-                  .foregroundStyle(Color.white.opacity(0.94))
-                Spacer()
-                Image(systemName: "chevron.right")
-                  .font(.caption.weight(.bold))
-                  .foregroundStyle(Color.white.opacity(0.28))
-              }
-              .padding(.vertical, 10)
-            }
-            .buttonStyle(.plain)
-
-            Toggle(isOn: $autofillAck) {
-              Label(String(localized: "Show AutoFill tip in Settings"), systemImage: "text.badge.checkmark")
-            }
-            .tint(VaultGeneratorTheme.accent)
-
-            if autofillAck {
+            VStack(alignment: .leading, spacing: 14) {
               Text(
                 String(
                   localized:
-                    "The AutoFill extension shares the same protected vault on this device. Open the guide above if PassVault does not appear under Password Options.",
+                    "The AutoFill extension shares the same protected vault on this device. To enable suggestion in Safari and other apps:"
                 )
               )
-              .font(.footnote)
-              .foregroundStyle(Color.white.opacity(0.55))
+              .font(.subheadline)
+              .foregroundStyle(Color.white.opacity(0.85))
+              .fixedSize(horizontal: false, vertical: true)
+
+              NavigationLink {
+                AutoFillSetupView()
+              } label: {
+                HStack(spacing: 12) {
+                  Image(systemName: "info.circle.fill")
+                    .font(.body.weight(.semibold))
+                    .foregroundStyle(VaultGeneratorTheme.accent)
+                  Text(String(localized: "View setup instructions"))
+                    .font(.body.weight(.medium))
+                    .foregroundStyle(Color.white.opacity(0.94))
+                  Spacer()
+                  Image(systemName: "chevron.right")
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(Color.white.opacity(0.28))
+                }
+                .padding(14)
+                .background(Color.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 12))
+              }
+              .buttonStyle(.plain)
             }
           }
 
@@ -145,11 +155,8 @@ struct SettingsPaneView: View {
           }
           guard let raw = try? Data(contentsOf: url) else { return }
           do {
-            let envelope = try PassVaultImportExportService.decodeImport(data: raw)
-            await home.importRecords(
-              records: envelope.records,
-              defaultCategoryId: home.categories.first?.id,
-            )
+            let records = try PassVaultImportExportService.decodeImport(data: raw)
+            await home.importRecords(records: records)
           } catch {
             home.lastErrorDescription = error.localizedDescription
           }
@@ -232,7 +239,7 @@ struct SettingsPaneView: View {
   private var reminderNotificationsSummary: String {
     switch notificationAuth {
     case .authorized:
-      return String(localized: "Reminder alerts are on. Tap below to re-sync scheduled dates with your vault.")
+      return String(localized: "Reminder alerts are on. PassVault will notify you when a password is due for refresh.")
     case .denied:
       return String(
         localized:
@@ -250,51 +257,15 @@ struct SettingsPaneView: View {
     }
   }
 
-  private var notificationPrimaryTitle: String {
-    switch notificationAuth {
-    case .notDetermined:
-      return String(localized: "Enable reminder notifications")
-    case .denied:
-      return String(localized: "Open notification settings")
-    case .authorized, .ephemeral, .provisional:
-      return String(localized: "Refresh reminder schedule")
-    @unknown default:
-      return String(localized: "Notifications")
-    }
-  }
-
-  private var notificationPrimaryIcon: String {
-    switch notificationAuth {
-    case .denied:
-      return "gearshape"
-    default:
-      return "bell.badge"
-    }
-  }
-
-  @MainActor
-  private func runNotificationPrimaryAction() async {
-    switch notificationAuth {
-    case .notDetermined:
-      let granted = await PasswordReminderScheduler.requestAuthorizationFromSettings()
-      if granted {
-        await home.syncScheduledPasswordReminders()
-      }
-    case .denied:
-      if let url = URL(string: UIApplication.openNotificationSettingsURLString) {
-        await UIApplication.shared.open(url)
-      }
-    case .authorized, .ephemeral, .provisional:
-      await home.syncScheduledPasswordReminders()
-    @unknown default:
-      break
-    }
-  }
-
   @MainActor
   private func refreshNotificationStatus() async {
     let s = await UNUserNotificationCenter.current().notificationSettings()
     notificationAuth = s.authorizationStatus
+    
+    // Auto-sync reminders whenever status is checked if authorized
+    if notificationAuth == .authorized {
+        await home.syncScheduledPasswordReminders()
+    }
   }
 
   private func performExportShare() {

@@ -274,10 +274,6 @@ private struct VaultCredentialBriefRow: View {
       }
 
       Spacer(minLength: 8)
-      
-      Image(systemName: "chevron.right")
-        .font(.caption2.weight(.bold))
-        .foregroundStyle(Color.white.opacity(0.2))
     }
     .padding(.vertical, 8)
   }

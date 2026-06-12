@@ -86,4 +86,48 @@ final class CategoriesViewModel {
       lastErrorDescription = error.localizedDescription
     }
   }
+
+  func deletePasswordsInCategory(categoryId: Int) async {
+    do {
+      let affectedRows = passwords.filter { $0.categoryId == categoryId }
+      for row in affectedRows {
+        PasswordReminderScheduler.cancel(entryId: row.id)
+      }
+      try await database.write { db in
+        try db.execute(sql: "DELETE FROM vaultPasswords WHERE categoryId = ?", arguments: [categoryId])
+      }
+    } catch {
+      lastErrorDescription = error.localizedDescription
+    }
+  }
+
+  func deleteCategoryAndPasswords(_ category: CategoryRow) async {
+    do {
+      let affectedRows = passwords.filter { $0.categoryId == category.id }
+      for row in affectedRows {
+        PasswordReminderScheduler.cancel(entryId: row.id)
+      }
+      try await database.write { db in
+        try db.execute(sql: "DELETE FROM vaultPasswords WHERE categoryId = ?", arguments: [category.id])
+        try CategoryRow.delete(category).execute(db)
+      }
+    } catch {
+      lastErrorDescription = error.localizedDescription
+    }
+  }
+
+  func movePasswordsInCategory(from sourceId: Int, to destinationId: Int) async {
+    do {
+      let affectedRows = passwords.filter { $0.categoryId == sourceId }
+      try await database.write { db in
+        for var row in affectedRows {
+          row.categoryId = destinationId
+          row.updatedAt = Date()
+          try VaultPasswordRow.update(row).execute(db)
+        }
+      }
+    } catch {
+      lastErrorDescription = error.localizedDescription
+    }
+  }
 }

@@ -98,7 +98,7 @@ struct CategoriesPaneView: View {
         RenameCategoryOverlay(category: row, categoriesVm: categoriesVm)
       }
       .confirmationDialog(
-        String(localized: "Migrate every password before removing this folder."),
+        String(localized: "Remove folder"),
         isPresented: Binding(
           get: { deleteSubject != nil },
           set: { flag in if !flag { deleteSubject = nil } },
@@ -106,23 +106,40 @@ struct CategoriesPaneView: View {
         titleVisibility: .visible,
       ) {
         if let victim = deleteSubject {
+          let count = categoriesVm.passwordCount(for: victim.id)
           let exits = categoriesVm.categories.filter { $0.id != victim.id }
-          if exits.isEmpty {
-            Button(String(localized: "OK")) {
-              deleteSubject = nil
-            }
-          } else {
-            ForEach(exits) { dest in
-              Button(dest.name) {
-                Task {
-                  await categoriesVm.deleteCategory(victim, migratingPasswordsTo: dest.id)
-                  deleteSubject = nil
+          
+          if count > 0 {
+            if !exits.isEmpty {
+              Menu(String(localized: "Migrate and delete folder")) {
+                ForEach(exits) { dest in
+                  Button(dest.name) {
+                    Task {
+                      await categoriesVm.deleteCategory(victim, migratingPasswordsTo: dest.id)
+                      deleteSubject = nil
+                    }
+                  }
                 }
               }
             }
-            Button(String(localized: "Cancel"), role: .cancel) {
-              deleteSubject = nil
+            
+            Button(String(localized: "Delete folder and all \(count) items"), role: .destructive) {
+              Task {
+                await categoriesVm.deleteCategoryAndPasswords(victim)
+                deleteSubject = nil
+              }
             }
+          } else {
+            Button(String(localized: "Delete empty folder"), role: .destructive) {
+              Task {
+                await categoriesVm.deleteCategoryAndPasswords(victim)
+                deleteSubject = nil
+              }
+            }
+          }
+          
+          Button(String(localized: "Cancel"), role: .cancel) {
+            deleteSubject = nil
           }
         }
       }
@@ -219,6 +236,8 @@ struct CategoryShelfStrip: View {
   @Environment(\.copyToastHost) private var copyToastHost
 
   @State private var composing: VaultComposerSurface?
+  @State private var confirmEmpty = false
+  @State private var showMigrate = false
 
   private var payloads: [VaultPasswordRow] {
     homeVm.allVaultRows
@@ -228,6 +247,10 @@ struct CategoryShelfStrip: View {
 
   private var cohort: CategoryRow? {
     categoriesVm.categories.first { $0.id == categoryId }
+  }
+
+  private var otherCategories: [CategoryRow] {
+    categoriesVm.categories.filter { $0.id != categoryId }
   }
 
   var body: some View {
@@ -308,13 +331,64 @@ struct CategoryShelfStrip: View {
     }
     .toolbar {
       ToolbarItem(placement: .topBarTrailing) {
-        Button {
-          composing = .compose(categoryHint: categoryId)
-        } label: {
-          Label(String(localized: "Create"), systemImage: "plus.circle.fill")
+        HStack(spacing: 16) {
+          if !payloads.isEmpty {
+            Menu {
+              if !otherCategories.isEmpty {
+                Button(String(localized: "Migrate all to..."), systemImage: "arrow.right.square") {
+                  showMigrate = true
+                }
+              }
+              
+              Button(role: .destructive) {
+                confirmEmpty = true
+              } label: {
+                Label(String(localized: "Empty folder"), systemImage: "trash")
+              }
+            } label: {
+              Image(systemName: "folder.badge.minus")
+            }
+          }
+          
+          Button {
+            composing = .compose(categoryHint: categoryId)
+          } label: {
+            Label(String(localized: "Create"), systemImage: "plus.circle.fill")
+          }
         }
       }
     }
+    .confirmationDialog(
+        String(localized: "Migrate items to..."),
+        isPresented: $showMigrate,
+        titleVisibility: .visible
+    ) {
+        ForEach(otherCategories) { dest in
+            Button(dest.name) {
+                Task {
+                    await categoriesVm.movePasswordsInCategory(from: categoryId, to: dest.id)
+                    Haptics.success()
+                }
+            }
+        }
+        Button(String(localized: "Cancel"), role: .cancel) {}
+    }
+    .alert(
+        String(localized: "Empty this folder?"),
+        isPresented: $confirmEmpty,
+        actions: {
+            Button(String(localized: "Cancel"), role: .cancel) {}
+            Button(String(localized: "Empty all \(payloads.count) items"), role: .destructive) {
+                Task {
+                    await categoriesVm.deletePasswordsInCategory(categoryId: categoryId)
+                    Haptics.warning()
+                }
+            }
+        },
+        message: {
+            Text(String(localized: "This will permanently remove every credential in this folder."))
+        }
+    )
     .sheet(item: $composing, onDismiss: {}) { surface in
       switch surface {
       case let .compose(hint):

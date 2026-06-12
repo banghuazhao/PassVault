@@ -228,25 +228,30 @@ final class HomeViewModel {
   }
 
   func importRecords(
-    records: [PassVaultExportRecord],
-    defaultCategoryId: Int?
+    records: [ImportedRecord]
   )
     async
   {
-    guard let fallback =
-      defaultCategoryId
-      ?? categories.first?.id else {
+    let allCategories = categories
+    guard let firstCategory = allCategories.first else {
       lastErrorDescription = String(localized: "Pick a vault category before importing.")
       return
     }
 
     for record in records {
+      let targetCategoryId: Int
+      if let catName = record.categoryName, let existing = allCategories.first(where: { $0.name == catName }) {
+          targetCategoryId = existing.id
+      } else {
+          targetCategoryId = firstCategory.id
+      }
+
       _ =
         await insertPassword(
-          categoryId: fallback,
+          categoryId: targetCategoryId,
           title: record.title,
           password: record.password,
-          entryKindRaw: record.entryKindRaw,
+          entryKindRaw: "login",
           website: record.website,
           notes: record.notes,
           customIconSFName: nil,
