@@ -3,8 +3,15 @@
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen)](https://github.com/banghuazhao/PassVault)
 [![Platform](https://img.shields.io/badge/platform-iOS-blue)](https://developer.apple.com/ios/)
 [![Swift](https://img.shields.io/badge/Swift-6.0-orange)](https://swift.org)
+[![App Store](https://img.shields.io/badge/App%20Store-Download-0D96F6?logo=appstore&logoColor=white)](https://apps.apple.com/nz/app/passvault-secure-pass-manager/id6780150333)
 
-PassVault is a secure, elegant, and industry-standard iOS password manager. Designed with a premium "glassy" dark theme, it offers a seamless experience for managing credentials across your devices with a powerful Autofill extension and robust data portability.
+PassVault is a secure, elegant, and industry-standard iOS password manager, now available on the App Store. Designed with a premium "glassy" dark theme, it offers a seamless experience for managing credentials on your device with a powerful Autofill extension and robust data portability.
+
+## 📲 Download
+
+PassVault is available for iPhone on the App Store:
+
+[Download PassVault: Secure Pass Manager](https://apps.apple.com/nz/app/passvault-secure-pass-manager/id6780150333)
 
 ## ✨ Features
 
@@ -38,7 +45,7 @@ PassVault is a secure, elegant, and industry-standard iOS password manager. Desi
 - **CryptoKit**: Industry-standard AES-GCM encryption for securing your vault.
 - **Observation Framework**: Modern state management for efficient UI updates.
 
-## 🚀 Getting Started
+## 🚀 Development Setup
 
 ### Prerequisites
 - Xcode 16.0 or later
