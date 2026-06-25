@@ -142,4 +142,4 @@ logs/
 .env.test
 .env.production 
 
-PassVault/Config/Release.xcconfig
+Config/Release.xcconfig

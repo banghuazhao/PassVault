@@ -11,6 +11,7 @@
 		999FA0472FA8B1DA004D4D99 /* AuthenticationServices.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 999FA0462FA8B1DA004D4D99 /* AuthenticationServices.framework */; };
 		999FA0522FA8B1DA004D4D99 /* Autofill.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 999FA0442FA8B1DA004D4D99 /* Autofill.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		999FA0582FA8B1DA004D4D99 /* SQLiteData in Frameworks */ = {isa = PBXBuildFile; productRef = 999F9FD82FA85F7E004D4D99 /* SQLiteData */; };
+		AB66AA002FA85F7E004D4D99 /* GoogleMobileAds in Frameworks */ = {isa = PBXBuildFile; productRef = AB55AA002FA85F7E004D4D99 /* GoogleMobileAds */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -41,6 +42,8 @@
 		999F9FC92FA85EFB004D4D99 /* PassVault.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PassVault.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		999FA0442FA8B1DA004D4D99 /* Autofill.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = Autofill.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		999FA0462FA8B1DA004D4D99 /* AuthenticationServices.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AuthenticationServices.framework; path = System/Library/Frameworks/AuthenticationServices.framework; sourceTree = SDKROOT; };
+		AB11AA002FA85EFD004D4D99 /* Debug.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = Debug.xcconfig; path = Debug.xcconfig; sourceTree = "<group>"; };
+		AB22AA002FA85EFD004D4D99 /* Release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = Release.xcconfig; path = Release.xcconfig; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -51,11 +54,21 @@
 			);
 			target = 999FA0432FA8B1DA004D4D99 /* Autofill */;
 		};
+		AB77AA002FA85EFD004D4D99 /* Exceptions for "PassVault" folder in "PassVault" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 999F9FC82FA85EFB004D4D99 /* PassVault */;
+		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		999F9FCB2FA85EFB004D4D99 /* PassVault */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				AB77AA002FA85EFD004D4D99 /* Exceptions for "PassVault" folder in "PassVault" target */,
+			);
 			path = PassVault;
 			sourceTree = "<group>";
 		};
@@ -75,6 +88,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				999F9FD92FA85F7E004D4D99 /* SQLiteData in Frameworks */,
+				AB66AA002FA85F7E004D4D99 /* GoogleMobileAds in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -95,9 +109,20 @@
 			children = (
 				999F9FCB2FA85EFB004D4D99 /* PassVault */,
 				999FA0482FA8B1DA004D4D99 /* Autofill */,
+				AB33AA002FA85EFD004D4D99 /* Config */,
 				999FA0452FA8B1DA004D4D99 /* Frameworks */,
 				999F9FCA2FA85EFB004D4D99 /* Products */,
 			);
+			sourceTree = "<group>";
+		};
+		AB33AA002FA85EFD004D4D99 /* Config */ = {
+			isa = PBXGroup;
+			children = (
+				AB11AA002FA85EFD004D4D99 /* Debug.xcconfig */,
+				AB22AA002FA85EFD004D4D99 /* Release.xcconfig */,
+			);
+			name = Config;
+			path = Config;
 			sourceTree = "<group>";
 		};
 		999F9FCA2FA85EFB004D4D99 /* Products */ = {
@@ -140,6 +165,7 @@
 			name = PassVault;
 			packageProductDependencies = (
 				999F9FD82FA85F7E004D4D99 /* SQLiteData */,
+				AB55AA002FA85F7E004D4D99 /* GoogleMobileAds */,
 			);
 			productName = PassVault;
 			productReference = 999F9FC92FA85EFB004D4D99 /* PassVault.app */;
@@ -197,6 +223,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				999F9FD72FA85F7E004D4D99 /* XCRemoteSwiftPackageReference "sqlite-data" */,
+				AB44AA002FA85F7E004D4D99 /* XCRemoteSwiftPackageReference "swift-package-manager-google-mobile-ads" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 999F9FCA2FA85EFB004D4D99 /* Products */;
@@ -375,6 +402,7 @@
 		};
 		999F9FD52FA85EFD004D4D99 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = AB11AA002FA85EFD004D4D99 /* Debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -383,14 +411,8 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = F694X76A5X;
 				ENABLE_PREVIEWS = YES;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_KeychainAccessGroup = "$(AppIdentifierPrefix)com.appsbay.PassVault";
-				INFOPLIST_KEY_NSUserNotificationsUsageDescription = "PassVault schedules local reminders on this device when passwords are due for rotation. No remote server is used.";
-				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
-				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = PassVault/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.6;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -411,6 +433,7 @@
 		};
 		999F9FD62FA85EFD004D4D99 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = AB22AA002FA85EFD004D4D99 /* Release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -419,14 +442,8 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = F694X76A5X;
 				ENABLE_PREVIEWS = YES;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_KeychainAccessGroup = "$(AppIdentifierPrefix)com.appsbay.PassVault";
-				INFOPLIST_KEY_NSUserNotificationsUsageDescription = "PassVault schedules local reminders on this device when passwords are due for rotation. No remote server is used.";
-				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
-				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = PassVault/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.6;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -546,6 +563,14 @@
 				minimumVersion = 1.6.1;
 			};
 		};
+		AB44AA002FA85F7E004D4D99 /* XCRemoteSwiftPackageReference "swift-package-manager-google-mobile-ads" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/googleads/swift-package-manager-google-mobile-ads";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 11.0.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -553,6 +578,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 999F9FD72FA85F7E004D4D99 /* XCRemoteSwiftPackageReference "sqlite-data" */;
 			productName = SQLiteData;
+		};
+		AB55AA002FA85F7E004D4D99 /* GoogleMobileAds */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AB44AA002FA85F7E004D4D99 /* XCRemoteSwiftPackageReference "swift-package-manager-google-mobile-ads" */;
+			productName = GoogleMobileAds;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

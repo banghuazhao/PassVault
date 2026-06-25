@@ -44,6 +44,7 @@ PassVault is available for iPhone on the App Store:
 - **GRDB**: Robust, high-performance SQLite access with advanced data protection.
 - **CryptoKit**: Industry-standard AES-GCM encryption for securing your vault.
 - **Observation Framework**: Modern state management for efficient UI updates.
+- **Google Mobile Ads SDK**: Non-intrusive banner and app-open ads via AdMob.
 
 ## 🚀 Development Setup
 
@@ -58,7 +59,18 @@ PassVault is available for iPhone on the App Store:
    ```
 2. Open `PassVault.xcodeproj` in Xcode.
 3. Configure your **App Group** (`group.com.appsbay.PassVault`) in the project's Signing & Capabilities tab for both the main app and the Autofill extension.
-4. Build and run on your physical device or simulator.
+4. **AdMob — Release config (required for Release builds):** Create `Config/Release.xcconfig` at the project root with your production AdMob IDs. This file is gitignored to keep production credentials out of source control.
+   ```xcconfig
+   GAD_APP_ID = ca-app-pub-XXXXXXXXXXXXXXXX~XXXXXXXXXX
+   BANNER_AD_UNIT_ID = ca-app-pub-XXXXXXXXXXXXXXXX/XXXXXXXXXX
+   APP_OPEN_AD_UNIT_ID = ca-app-pub-XXXXXXXXXXXXXXXX/XXXXXXXXXX
+
+   INFOPLIST_KEY_GADApplicationIdentifier = $(GAD_APP_ID)
+   INFOPLIST_KEY_BannerAdUnitID = $(BANNER_AD_UNIT_ID)
+   INFOPLIST_KEY_AppOpenAdUnitID = $(APP_OPEN_AD_UNIT_ID)
+   ```
+   Debug builds use Google's public test IDs automatically (`Config/Debug.xcconfig` is committed).
+5. Build and run on your physical device or simulator.
 
 ## 🤝 Contributing
 

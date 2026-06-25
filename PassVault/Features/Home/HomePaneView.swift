@@ -8,6 +8,7 @@ import SwiftUI
 struct HomePaneView: View {
   @Bindable private var model: HomeViewModel
   @State private var composing: VaultComposerSurface?
+  @State private var bannerHeight: CGFloat = 50
   @Environment(\.copyToastHost) private var copyToastHost
 
   init(model: HomeViewModel) {
@@ -19,8 +20,14 @@ struct HomePaneView: View {
       ZStack {
         VaultPalette.backdropTop.ignoresSafeArea()
 
-        credentialList
-          .searchable(text: $model.searchQuery, prompt: String(localized: "Search title or site"))
+        VStack(spacing: 0) {
+          credentialList
+            .searchable(text: $model.searchQuery, prompt: String(localized: "Search title or site"))
+
+          BannerAdView(adUnitID: AdConfig.bannerAdUnitID, adHeight: $bannerHeight)
+            .frame(height: bannerHeight)
+            .background(Color.black.opacity(0.85))
+        }
       }
       .navigationTitle(String(localized: "Vault"))
       .toolbar {
